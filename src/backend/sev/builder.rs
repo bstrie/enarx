@@ -9,11 +9,10 @@ use crate::backend::kvm::builder::kvm_try_from_builder;
 use crate::backend::kvm::mem::Region;
 
 use std::convert::TryFrom;
-use std::fmt::Debug;
 use std::sync::{Arc, RwLock};
 use std::{thread, time};
 
-use anyhow::{Context, Error, Result};
+use anyhow::{Context, Error};
 use kvm_ioctls::Kvm;
 use mmarinus::{perms, Map};
 use primordial::Page;
@@ -31,10 +30,9 @@ pub struct Builder {
     sallyports: Vec<Option<VirtAddr>>,
 }
 
-fn retry<O, E, F>(func: F) -> Result<O, E>
+fn retry<O, F>(func: F) -> anyhow::Result<O>
 where
-    F: Fn() -> Result<O, E>,
-    E: Debug,
+    F: Fn() -> anyhow::Result<O>,
 {
     let mut retries = SEV_RETRIES;
     let mut rng = thread_rng();
@@ -66,7 +64,7 @@ where
 impl TryFrom<super::super::kvm::config::Config> for Builder {
     type Error = Error;
 
-    fn try_from(_config: super::super::kvm::config::Config) -> Result<Self> {
+    fn try_from(_config: super::super::kvm::config::Config) -> anyhow::Result<Self> {
         let (kvm_fd, launcher) = retry(|| {
             // try to open /dev/sev and start the Launcher several times
 
@@ -76,9 +74,10 @@ impl TryFrom<super::super::kvm::config::Config> for Builder {
                 .context("Failed to create a virtual machine")?;
 
             let sev = retry(|| Firmware::open().context("Failed to open '/dev/sev'"))?;
-            Launcher::new(vm_fd, sev)
-                .map(|launcher| (kvm_fd, launcher))
-                .context("SNP Launcher init failed")
+
+            let launcher = Launcher::new(vm_fd, sev).context("SNP Launcher init failed")?;
+
+            Ok((kvm_fd, launcher))
         })?;
 
         let start = Start {
@@ -190,7 +189,7 @@ impl super::super::Mapper for Builder {
 impl TryFrom<Builder> for Arc<dyn super::super::Keep> {
     type Error = Error;
 
-    fn try_from(mut builder: Builder) -> Result<Self> {
+    fn try_from(mut builder: Builder) -> anyhow::Result<Self> {
         let (vcpu_fd, sallyport_block_start) = kvm_try_from_builder(
             &builder.sallyports,
             &mut builder.kvm_fd,
