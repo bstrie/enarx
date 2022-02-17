@@ -9,14 +9,20 @@ use crate::backend::kvm::builder::kvm_try_from_builder;
 use crate::backend::kvm::mem::Region;
 
 use std::convert::TryFrom;
+use std::fmt::Debug;
 use std::sync::{Arc, RwLock};
+use std::{thread, time};
 
 use anyhow::{Context, Error, Result};
 use kvm_ioctls::Kvm;
 use mmarinus::{perms, Map};
 use primordial::Page;
+use rand::{thread_rng, Rng};
 use sallyport::elf::pf::snp::{CPUID, SECRETS};
 use x86_64::VirtAddr;
+
+const SEV_RETRIES: usize = 3;
+const SEV_RETRY_SLEEP_MS: u64 = 500;
 
 pub struct Builder {
     kvm_fd: Kvm,
@@ -25,18 +31,55 @@ pub struct Builder {
     sallyports: Vec<Option<VirtAddr>>,
 }
 
+fn retry<O, E, F>(func: F) -> Result<O, E>
+where
+    F: Fn() -> Result<O, E>,
+    E: Debug,
+{
+    let mut retries = SEV_RETRIES;
+    let mut rng = thread_rng();
+    loop {
+        match func() {
+            Err(e) if retries > 0 => {
+                retries -= 1;
+                eprintln!(
+                    "Error {:#?}.\nRetry {} of {}.",
+                    e,
+                    SEV_RETRIES - retries,
+                    SEV_RETRIES
+                );
+                let millis =
+                    time::Duration::from_millis(SEV_RETRY_SLEEP_MS + rng.gen::<u8>() as u64);
+                thread::sleep(millis);
+                continue;
+            }
+            Err(e) => {
+                return Err(e);
+            }
+            Ok(o) => {
+                return Ok(o);
+            }
+        }
+    }
+}
+
 impl TryFrom<super::super::kvm::config::Config> for Builder {
     type Error = Error;
 
     fn try_from(_config: super::super::kvm::config::Config) -> Result<Self> {
-        let kvm_fd = Kvm::new().context("Failed to open '/dev/kvm'")?;
-        let vm_fd = kvm_fd
-            .create_vm()
-            .context("Failed to create a virtual machine")?;
+        let (kvm_fd, launcher) = retry(|| {
+            // try to open /dev/sev and start the Launcher several times
 
-        let sev = Firmware::open().context("Failed to open '/dev/sev'")?;
+            let kvm_fd = Kvm::new().context("Failed to open '/dev/kvm'")?;
+            let vm_fd = kvm_fd
+                .create_vm()
+                .context("Failed to create a virtual machine")?;
 
-        let launcher = Launcher::new(vm_fd, sev).context("SNP Launcher init failed")?;
+            let sev = retry(|| Firmware::open().context("Failed to open '/dev/sev'"))?;
+            Launcher::new(vm_fd, sev)
+                .map(|launcher| (kvm_fd, launcher))
+                .context("SNP Launcher init failed")
+        })?;
 
         let start = Start {
             policy: Policy {
