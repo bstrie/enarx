@@ -50,7 +50,7 @@ impl super::Backend for Backend {
 
     #[inline]
     fn shim(&self) -> &'static [u8] {
-        include_bytes!(concat!(env!("OUT_DIR"), "/bin/shim-sev"))
+        include_bytes!(concat!(env!("OUT_DIR"), "/bin/shim-kvm"))
     }
 
     #[inline]
