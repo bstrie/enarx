@@ -2,23 +2,21 @@
 
 use crate::backend::sev::Firmware;
 
+use anyhow::{anyhow, Context, Result};
 use std::fs::{self, remove_file};
 use std::io::{self, ErrorKind, Read, Seek};
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
-
-use anyhow::{anyhow, Context, Result};
-use clap::Subcommand;
+use structopt::StructOpt;
 
 /// SNP-specific functionality
-#[derive(Subcommand, Debug)]
+#[derive(StructOpt, Debug)]
 pub enum Command {
     /// SNP VCEK related commands
-    #[clap(subcommand)]
     Vcek(VcekCommand),
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(StructOpt, Debug)]
 pub enum VcekCommand {
     /// Print the VCEK certificate for this platform to stdout in PEM format
     Show,

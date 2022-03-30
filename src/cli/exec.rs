@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::cli::BackendOptions;
+use crate::cli::{BackendOptions, StructOpt};
 
 use std::path::PathBuf;
-
-use clap::Args;
 
 /// Execute a (static, PIE) binary inside an Enarx Keep.
 ///
@@ -16,17 +14,17 @@ use clap::Args;
 /// This subcommand is hidden from the main help because it's unlikely to be
 /// useful because of the restrictions above. It's mainly used for
 /// development and integration tests.
-#[derive(Args, Debug)]
+#[derive(StructOpt, Debug)]
 pub struct Options {
-    #[clap(flatten)]
+    #[structopt(flatten)]
     pub backend: BackendOptions,
 
     /// Binary to load and run inside the keep
-    #[clap(value_name = "BINARY")]
+    #[structopt(value_name = "BINARY")]
     pub binpath: PathBuf,
 
     /// gdb options
     #[cfg(feature = "gdb")]
-    #[clap(long, default_value = "localhost:23456")]
+    #[structopt(long, default_value = "localhost:23456")]
     pub gdblisten: String,
 }
