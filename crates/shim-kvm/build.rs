@@ -5,6 +5,5 @@ fn main() {
         "cargo:rustc-link-arg-bin=enarx-shim-kvm=-T{}/layout.ld",
         std::env::var("CARGO_MANIFEST_DIR").unwrap()
     );
-    println!("cargo:rustc-link-arg-bin=enarx-shim-kvm=-Wl,--sort-section=alignment");
-    println!("cargo:rustc-link-arg-bin=enarx-shim-kvm=-nostartfiles");
+    println!("cargo:rustc-link-arg-bin=enarx-shim-kvm=--sort-section=alignment");
 }
