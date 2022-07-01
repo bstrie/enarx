@@ -31,56 +31,71 @@ use tempfile::tempdir;
 const TOKEN: &str = "test-token";
 const SUBJECT: &str = "test|subject";
 
+/// Just a nice wrapper over `format!` for testing CLI invocations
+macro_rules! cmd {
+    ($($arg:tt)+) => (
+        enarx(format!($($arg)+))
+    )
+}
+
 #[async_std::test]
 async fn full() {
-    run(|srv_addr| async {
-        let oidc_cl = init_clients(srv_addr);
+    run(|srv_addr| async move {
+        let oidc_cl = init_clients(srv_addr.clone());
 
-        let user_name = "testuser".parse().unwrap();
-        let user_record = UserRecord {
-            subject: SUBJECT.into(),
-        };
+let user_name = "testuser".parse().unwrap();
+let oidc_user = oidc_cl.user(&user_name);
 
-        let oidc_user = oidc_cl.user(&user_name);
+        // test for failure to get a user that does not exist
+        // TODO: make address part of slug
+        let out = cmd!("enarx user info --addr {srv_addr} testuser");
+        assert_eq!(out.success, false);
 
-        assert!(oidc_user.get().is_err());
+let user_record = UserRecord {
+    subject: SUBJECT.into(),
+};
 
-        assert!(oidc_user
-            .create(&UserRecord {
-                subject: format!("{}other", user_record.subject),
-            })
-            .is_err());
+        // test for success when creating a user with proper credentials
+        // enarx user register testuser
+        // TODO: test for failure when creating a user withour proper credentials
         assert_eq!(
             oidc_user
                 .create(&user_record)
                 .expect("failed to create user"),
             true
         );
+
+        // test for failure when creating a user whose subject matches an existing user?
+        // enarx user register testuser2
         assert!(oidc_cl
             .user(&format!("{user_name}other").parse().unwrap())
             .create(&user_record)
             .is_err());
 
+        // test for success to get a user that exists
+        // enarx user info testuser
         assert_eq!(oidc_user.get().expect("failed to get user"), user_record);
 
-        let prv_repo_name = "test-repo-private".parse().unwrap();
-        let prv_repo_conf = RepositoryConfig { public: false };
+let prv_repo_name = "test-repo-private".parse().unwrap();
+let prv_repo_conf = RepositoryConfig { public: false };
 
-        let pub_repo_name = "test-repo-public".parse().unwrap();
-        let pub_repo_conf = RepositoryConfig { public: true };
+let pub_repo_name = "test-repo-public".parse().unwrap();
+let pub_repo_conf = RepositoryConfig { public: true };
 
-        let oidc_prv_repo = oidc_user.repository(&prv_repo_name);
+let oidc_prv_repo = oidc_user.repository(&prv_repo_name);
 
-        let oidc_pub_repo = oidc_user.repository(&pub_repo_name);
+let oidc_pub_repo = oidc_user.repository(&pub_repo_name);
 
-        assert!(oidc_prv_repo.get().is_err());
-
-        assert!(oidc_pub_repo.get().is_err());
-
+        // test for failure to get private repo that does not exist
+        // enarx repo info testuser/prvrepo
         assert!(oidc_prv_repo.tags().is_err());
 
+        // test for failure to get public repo that does not exist
+        // enarx repo info testuser/pubrepo
         assert!(oidc_pub_repo.tags().is_err());
 
+        // test for success to register private repo
+        // enarx repo register --private testuser/prvrepo
         assert_eq!(
             oidc_prv_repo
                 .create(&prv_repo_conf)
@@ -88,6 +103,8 @@ async fn full() {
             true
         );
 
+        // test for success to register public repo
+        // enarx repo register --public testuser/pubrepo
         assert_eq!(
             oidc_pub_repo
                 .create(&pub_repo_conf)
@@ -95,18 +112,12 @@ async fn full() {
             true
         );
 
-        assert_eq!(
-            oidc_prv_repo.get().expect("failed to get repository"),
-            prv_repo_conf
-        );
-
-        assert_eq!(
-            oidc_pub_repo.get().expect("failed to get repository"),
-            pub_repo_conf
-        );
-
+        // test for tags associated with an empty private repo
+        // enarx repo info testuser/prvrepo
         assert_eq!(oidc_prv_repo.tags().expect("failed to get tags"), vec![]);
 
+        // test for tags asoociated with an empty public repo
+        // enarx repo info testuser/pubrepo
         assert_eq!(oidc_pub_repo.tags().expect("failed to get tags"), vec![]);
 
         let pkg = tempdir().expect("failed to create temporary package directory");
@@ -144,14 +155,24 @@ async fn full() {
 
         let oidc_pub_tag = oidc_pub_repo.tag(&tag_name);
 
+        // test for failure to get a private tag that doesn't exist
+        // enarx package info testuser/prvrepo/0.1.0
         assert!(oidc_prv_tag.get().is_err());
 
+        // test for failure to get a public tag that doesn't exist
+        // enarx package info testuser/pubrepo/0.1.0
         assert!(oidc_pub_tag.get().is_err());
 
         let (prv_tag_created, prv_tree_created) = oidc_prv_tag
             .create_from_path_unsigned(pkg.path())
             .expect("failed to create a tag and upload the tree");
+
+        // test for success to publish a private package
+        // enarx package publish testuser/pubrepo/0.1.0 some_path
         assert!(prv_tag_created);
+
+        // test the contents of a published private package
+        // enarx package fetch testuser/pubrepo/0.1.0
         assert_eq!(
             prv_tree_created.clone().into_iter().collect::<Vec<_>>(),
             vec![
@@ -169,6 +190,7 @@ async fn full() {
             ]
         );
 
+        // test for success to publish a public package
         assert_eq!(
             oidc_pub_tag
                 .create_from_path_unsigned(pkg.path())
@@ -176,11 +198,13 @@ async fn full() {
             (prv_tag_created, prv_tree_created)
         );
 
+        // test for tags associated with a non-empty private repo
         assert_eq!(
             oidc_prv_repo.tags().expect("failed to get tags"),
             vec![tag_name.clone()]
         );
 
+        // test for tags associated with a non-empty public repo
         assert_eq!(
             oidc_pub_repo.tags().expect("failed to get tags"),
             vec![tag_name.clone()]
@@ -192,11 +216,13 @@ async fn full() {
 
         let oidc_pub_file = oidc_pub_tag.path(&file_name);
 
+        // test for retrival of a single file from a tree in a private package
         assert_eq!(
             oidc_prv_file.get_string().expect("failed to get file"),
             (APPLICATION_OCTET_STREAM, "text".into())
         );
 
+        // test for retrieval of a single file from a tree in a public package
         assert_eq!(
             oidc_pub_file.get_string().expect("failed to get file"),
             (APPLICATION_OCTET_STREAM, "text".into())
@@ -204,25 +230,26 @@ async fn full() {
     }).await;
 }
 
-fn enarx(args: &str) -> Output {
+fn enarx(args: String) -> Output {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_enarx"));
-    for arg in args.split(' ') {
+
+    for arg in args.split(' ').skip(1) {
         cmd.arg(arg);
     }
-    let output = cmd.output().expect("failed to execute `enarx`");
+
+    let out = cmd.output().expect("failed to execute `enarx`");
 
     Output {
-        status: output.status.success(),
-        stdout: from_utf8(&output.stdout).unwrap().to_string(),
-        stderr: from_utf8(&output.stderr).unwrap().to_string(),
+        success: out.status.success(),
+        output: from_utf8(&out.stdout).unwrap().to_string(),
     }
 }
 
 struct Output {
-    status: bool,
-    stdout: String,
-    stderr: String,
+    success: bool,
+    output: String,
 }
+
 
 async fn run<F, R>(commands: F)
 where F: FnOnce(String)-> R, R: Future<Output=()> {

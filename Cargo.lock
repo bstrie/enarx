@@ -972,8 +972,8 @@ dependencies = [
  "axum",
  "camino",
  "cap-async-std",
- "drawbridge-jose",
- "drawbridge-type",
+ "drawbridge-jose 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc)",
+ "drawbridge-type 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc)",
  "futures",
  "futures-rustls",
  "hyper",
@@ -998,13 +998,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "drawbridge-byte"
+version = "0.1.0"
+source = "git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f#d8e0befbd8da6b9f357c396273996e6141f7569f"
+dependencies = [
+ "base64",
+ "serde",
+]
+
+[[package]]
 name = "drawbridge-client"
 version = "0.1.0"
-source = "git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc#bb43cb593f04030b376143bfe55476f06da025fc"
+source = "git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f#d8e0befbd8da6b9f357c396273996e6141f7569f"
 dependencies = [
  "anyhow",
- "drawbridge-jose",
- "drawbridge-type",
+ "drawbridge-jose 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f)",
+ "drawbridge-type 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f)",
  "http",
  "mime",
  "rustls",
@@ -1020,7 +1029,21 @@ version = "0.1.0"
 source = "git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc#bb43cb593f04030b376143bfe55476f06da025fc"
 dependencies = [
  "base64",
- "drawbridge-byte",
+ "drawbridge-byte 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc)",
+ "mediatype",
+ "serde",
+ "serde_json",
+ "url",
+ "zeroize",
+]
+
+[[package]]
+name = "drawbridge-jose"
+version = "0.1.0"
+source = "git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f#d8e0befbd8da6b9f357c396273996e6141f7569f"
+dependencies = [
+ "base64",
+ "drawbridge-byte 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f)",
  "mediatype",
  "serde",
  "serde_json",
@@ -1036,8 +1059,8 @@ dependencies = [
  "anyhow",
  "axum",
  "base64",
- "drawbridge-byte",
- "drawbridge-jose",
+ "drawbridge-byte 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc)",
+ "drawbridge-jose 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc)",
  "futures",
  "headers",
  "http",
@@ -1046,6 +1069,24 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.2",
+ "walkdir",
+]
+
+[[package]]
+name = "drawbridge-type"
+version = "0.1.0"
+source = "git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f#d8e0befbd8da6b9f357c396273996e6141f7569f"
+dependencies = [
+ "anyhow",
+ "base64",
+ "drawbridge-byte 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f)",
+ "drawbridge-jose 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f)",
+ "futures",
+ "mime",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2",
  "walkdir",
 ]
 
