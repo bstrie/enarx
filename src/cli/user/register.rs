@@ -4,8 +4,9 @@ use crate::drawbridge::UserSpec;
 
 use anyhow::Context;
 use clap::Args;
+use drawbridge_client::types::UserRecord;
 
-/// Retrieve information about a user account on an Enarx package host.
+/// Register a new user account with a package host.
 #[derive(Args, Debug)]
 pub struct Options {
     spec: UserSpec,
@@ -14,10 +15,15 @@ pub struct Options {
 impl Options {
     pub fn execute(self) -> anyhow::Result<()> {
         let user = self.spec.user();
-        let record = user
-            .get()
-            .with_context(|| format!("failed to get record for user: {}", self.spec.ctx.name))?;
-        println!("asdf: {}", record.subject);
+
+        // TODO: but actually
+        let record = UserRecord {
+            subject: "test|subject".into(),
+        };
+
+        user.create(&record)
+            .context("failed to register new user")?;
+
         Ok(())
     }
 }

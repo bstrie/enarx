@@ -3,6 +3,7 @@
 mod info;
 mod login;
 mod logout;
+mod register;
 
 use clap::Subcommand;
 
@@ -12,6 +13,7 @@ pub enum Subcommands {
     Info(info::Options),
     Login(login::Options),
     Logout(logout::Options),
+    Register(register::Options),
 }
 
 impl Subcommands {
@@ -20,6 +22,7 @@ impl Subcommands {
             Self::Info(cmd) => cmd.execute(),
             Self::Login(cmd) => cmd.execute(),
             Self::Logout(cmd) => cmd.execute(),
+            Self::Register(cmd) => cmd.execute(),
         }
     }
 }
