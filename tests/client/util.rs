@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use std::future::Future;
-use std::net::SocketAddr;
 use std::process::Command;
 use std::str::from_utf8;
 
-use drawbridge_app::{App, OidcConfig, TlsConfig};
-
 use async_std::net::{Ipv4Addr, TcpListener};
-use async_std::task::{spawn, spawn_blocking, JoinHandle};
+use async_std::task::{spawn, JoinHandle};
+use drawbridge_app::{App, OidcConfig, TlsConfig};
 use futures::channel::oneshot::{channel, Sender};
 use futures::{join, StreamExt};
 use http_types::convert::{json, Serialize};
@@ -23,21 +20,14 @@ use openidconnect::{
 };
 use tempfile::tempdir;
 
-pub async fn enarx(args: String) -> Output {
+pub fn enarx(args: String) -> Output {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_enarx"));
 
     for arg in args.split_whitespace().skip(1) {
         cmd.arg(arg);
     }
 
-    let (cmd_tx, mut cmd_rx) = channel();
-
-    spawn_blocking(move || {
-        let out = cmd.output().expect("failed to execute `enarx`");
-        cmd_tx.send(out);
-    }).await;
-
-    let out = cmd_rx.try_recv().unwrap().unwrap();
+    let out = cmd.output().expect("failed to execute `enarx`");
 
     Output {
         success: out.status.success(),
@@ -53,14 +43,13 @@ pub struct Output {
     pub err: String,
 }
 
-pub async fn run<F, R>(commands: F)
-where F: FnOnce(String, String) -> R, R: Future<Output = ()> {
+pub async fn run(commands: impl FnOnce(String, String)) {
     env_logger::builder().is_test(true).init();
     let (oidc_addr, oidc_tx, oidc_handle) = init_oidc().await;
-    let (db_port, db_tx, db_handle) = init_drawbridge(oidc_addr).await;
+    let (db_port, db_tx, db_handle) = init_drawbridge(oidc_addr.clone()).await;
     let db_addr = format!("localhost:{db_port}");
 
-    commands(oidc_addr.to_string(), db_addr).await;
+    commands(oidc_addr, db_addr);
 
     // Gracefully stop servers
     assert_eq!(oidc_tx.send(()), Ok(()));
@@ -68,14 +57,16 @@ where F: FnOnce(String, String) -> R, R: Future<Output = ()> {
     assert!(matches!(join!(oidc_handle, db_handle), ((), ())));
 }
 
-async fn init_oidc() -> (SocketAddr, Sender<()>, JoinHandle<()>) {
+async fn init_oidc() -> (String, Sender<()>, JoinHandle<()>) {
     let oidc_lis = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
         .await
         .expect("failed to bind to address");
 
     let oidc_addr = oidc_lis.local_addr().unwrap();
 
-    let (oidc_tx, oidc_rx) = channel::<()>();
+    let oidc_url = format!("http://{oidc_addr}");
+
+    let (oidc_tx, oidc_rx) = channel();
 
     let oidc_handle = spawn(async move {
         oidc_lis
@@ -98,24 +89,26 @@ async fn init_oidc() -> (SocketAddr, Sender<()>, JoinHandle<()>) {
                         let oidc_url = format!("http://{oidc_addr}/");
                         match req.url().path() {
                             "/.well-known/openid-configuration" => {
-                                dbg!(req.clone());
-                                println!("Aasdfasdfsdf");
                                 json_response(
-                                &CoreProviderMetadata::new(
-                                    // Parameters required by the OpenID Connect Discovery spec.
-                                    IssuerUrl::new(oidc_url.to_string()).unwrap(),
-                                    AuthUrl::new(format!("{oidc_url}authorize")).unwrap(),
-                                    // Use the JsonWebKeySet struct to serve the JWK Set at this URL.
-                                    JsonWebKeySetUrl::new(format!("{oidc_url}jwks")).unwrap(),
-                                    vec![ResponseTypes::new(vec![CoreResponseType::Code])],
-                                    vec![CoreSubjectIdentifierType::Pairwise],
-                                    vec![CoreJwsSigningAlgorithm::RsaSsaPssSha256],
-                                    EmptyAdditionalProviderMetadata {},
+                                    &CoreProviderMetadata::new(
+                                        // Parameters required by the OpenID Connect Discovery spec.
+                                        IssuerUrl::new(oidc_url.to_string()).unwrap(),
+                                        AuthUrl::new(format!("{oidc_url}authorize")).unwrap(),
+                                        // Use the JsonWebKeySet struct to serve the JWK Set at this URL.
+                                        JsonWebKeySetUrl::new(format!("{oidc_url}jwks")).unwrap(),
+                                        vec![ResponseTypes::new(vec![CoreResponseType::Code])],
+                                        vec![CoreSubjectIdentifierType::Pairwise],
+                                        vec![CoreJwsSigningAlgorithm::RsaSsaPssSha256],
+                                        EmptyAdditionalProviderMetadata {},
+                                    )
+                                    .set_userinfo_endpoint(
+                                        Some(
+                                            UserInfoUrl::new(format!("{oidc_url}userinfo"))
+                                                .unwrap(),
+                                        ),
+                                    ),
                                 )
-                                .set_userinfo_endpoint(Some(
-                                    UserInfoUrl::new(format!("{oidc_url}userinfo")).unwrap(),
-                                )),
-                            )},
+                            }
                             "/jwks" => json_response(&CoreJsonWebKeySet::new(vec![
                                 CoreJsonWebKey::new_rsa(b"ntest".to_vec(), b"etest".to_vec(), None),
                             ])),
@@ -144,42 +137,44 @@ async fn init_oidc() -> (SocketAddr, Sender<()>, JoinHandle<()>) {
             .await
     });
 
-    (oidc_addr, oidc_tx, oidc_handle)
+    (oidc_url, oidc_tx, oidc_handle)
 }
 
-async fn init_drawbridge(oidc_addr: SocketAddr) -> (u16, Sender<()>, JoinHandle<()>) {
-    let srv_lis = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
+async fn init_drawbridge(oidc_addr: String) -> (u16, Sender<()>, JoinHandle<()>) {
+    let db_lis = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
         .await
         .expect("failed to bind to address");
 
     let store = tempdir().expect("failed to create temporary store directory");
 
-    let (srv_tx, srv_rx) = channel::<()>();
+    let (db_tx, db_rx) = channel();
 
-    let srv_port = srv_lis.local_addr().unwrap().port();
+    let db_port = db_lis.local_addr().unwrap().port();
 
-    let srv_handle = spawn(async move {
+    let db_handle = spawn(async move {
         let tls = TlsConfig::read(
             include_bytes!("certs/server.crt").as_slice(),
             include_bytes!("certs/server.key").as_slice(),
             include_bytes!("certs/ca.crt").as_slice(),
         )
         .unwrap();
+
         let app = App::new(
             store.path(),
             tls,
             OidcConfig {
                 label: "test-label".into(),
-                issuer: format!("http://{oidc_addr}").parse().unwrap(),
+                issuer: oidc_addr.parse().unwrap(),
                 client_id: "test-client-id".into(),
                 client_secret: None,
             },
         )
         .await
         .unwrap();
-        srv_lis
+
+        db_lis
             .incoming()
-            .take_until(srv_rx)
+            .take_until(db_rx)
             .for_each_concurrent(None, |stream| async {
                 app.handle(stream.expect("failed to initialize stream"))
                     .await
@@ -188,5 +183,5 @@ async fn init_drawbridge(oidc_addr: SocketAddr) -> (u16, Sender<()>, JoinHandle<
             .await
     });
 
-    (srv_port, srv_tx, srv_handle)
+    (db_port, db_tx, db_handle)
 }

@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::drawbridge::UserSpec;
+use crate::drawbridge::{client, UserSpec};
 
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use clap::Args;
 use drawbridge_client::types::UserRecord;
 use drawbridge_client::Url;
 use oauth2::AccessToken;
-use openidconnect::{IssuerUrl, ClientId};
 use openidconnect::core::{CoreClient, CoreProviderMetadata, CoreUserInfoClaims};
 use openidconnect::ureq::http_client;
+use openidconnect::{ClientId, IssuerUrl};
 
 /// Register a new user account with a package host.
 #[derive(Args, Debug)]
 pub struct Options {
+    #[clap(long)]
+    insecure_auth_token_file: Option<String>,
     #[clap(long, default_value = "https://auth.profian.com/")]
     oidc_domain: Url,
     #[clap(long, default_value = "4NuaJxkQv8EZBeJKE56R57gKJbxrTLG2")]
@@ -23,40 +25,35 @@ pub struct Options {
 
 impl Options {
     pub fn execute(self) -> anyhow::Result<()> {
-        let user = self.spec.user();
-/*
-		let provider_metadata = CoreProviderMetadata::discover(
-			&IssuerUrl::new(self.oidc_domain.to_string())?,
-			http_client,
-		)?;
+        let cl = client(&self.spec.host, &self.insecure_auth_token_file)
+            .context("Failed to build client")?;
+        let user = cl.user(&self.spec.ctx);
 
-        panic!("block here????");
+        let provider_metadata = CoreProviderMetadata::discover(
+            &IssuerUrl::new(self.oidc_domain.to_string())
+                .context("Failed to construct issuer URL")?,
+            http_client,
+        )
+        .context("Failed to discover provider metadata")?;
 
-		let client =
-			CoreClient::from_provider_metadata(
-				provider_metadata,
-				ClientId::new(self.oidc_client_id),
-				None
-			);
+        let oidc_client = CoreClient::from_provider_metadata(
+            provider_metadata,
+            ClientId::new(self.oidc_client_id),
+            None,
+        );
 
-        let userinfo: CoreUserInfoClaims = client
+        let userinfo: CoreUserInfoClaims = oidc_client
             .user_info(AccessToken::new("test-token".to_string()), None)
-            .map_err(|err| anyhow!("No user info endpoint: {:?}", err))?
+            .context("Failed to find user info endpoint")?
             .request(http_client)
-            .map_err(|err| anyhow!("Failed requesting user info: {:?}", err))?;
+            .context("Failed to make user info request")?;
 
-        let subject = userinfo.subject();
+        let subject = userinfo.subject().to_string();
 
-        println!("{:?}", subject);
-        return Ok(());
-*/
-        // TODO: but actually
-        let record = UserRecord {
-            subject: "test|subject".into(),
-        };
+        let record = UserRecord { subject };
 
         user.create(&record)
-            .context("failed to register new user")?;
+            .context("Failed to register new user")?;
 
         Ok(())
     }

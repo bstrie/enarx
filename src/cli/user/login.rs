@@ -66,7 +66,7 @@ impl Options {
 
         // TODO: graceful timeout, so that users are not forced to Ctrl+C if the server errors
         let secret = res.access_token().secret();
-        keyring::Entry::new("drawbridge", "enarx")
+        keyring::Entry::new("enarx", "drawbridge")
             .set_password(secret)
             .context("Failed to save user credentials")?;
         println!("Credentials received and saved. Login successful.");
