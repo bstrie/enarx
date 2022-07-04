@@ -7,11 +7,10 @@ use std::str::from_utf8;
 
 use drawbridge_app::{App, OidcConfig, TlsConfig};
 
-use async_std::fs::{create_dir, write};
 use async_std::net::{Ipv4Addr, TcpListener};
-use async_std::task::{spawn, JoinHandle};
+use async_std::task::{spawn, spawn_blocking, JoinHandle};
 use futures::channel::oneshot::{channel, Sender};
-use futures::{join, try_join, StreamExt};
+use futures::{join, StreamExt};
 use http_types::convert::{json, Serialize};
 use http_types::{Body, Response, StatusCode};
 use openidconnect::core::{
@@ -22,16 +21,23 @@ use openidconnect::{
     AuthUrl, EmptyAdditionalClaims, EmptyAdditionalProviderMetadata, IssuerUrl, JsonWebKeySetUrl,
     ResponseTypes, StandardClaims, SubjectIdentifier, UserInfoUrl,
 };
-use tempfile::{tempdir, TempDir};
+use tempfile::tempdir;
 
-pub fn enarx(args: String) -> Output {
+pub async fn enarx(args: String) -> Output {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_enarx"));
 
-    for arg in args.split(' ').skip(1) {
+    for arg in args.split_whitespace().skip(1) {
         cmd.arg(arg);
     }
 
-    let out = cmd.output().expect("failed to execute `enarx`");
+    let (cmd_tx, mut cmd_rx) = channel();
+
+    spawn_blocking(move || {
+        let out = cmd.output().expect("failed to execute `enarx`");
+        cmd_tx.send(out);
+    }).await;
+
+    let out = cmd_rx.try_recv().unwrap().unwrap();
 
     Output {
         success: out.status.success(),
@@ -48,21 +54,18 @@ pub struct Output {
 }
 
 pub async fn run<F, R>(commands: F)
-where
-    F: FnOnce(String) -> R,
-    R: Future<Output = ()>,
-{
+where F: FnOnce(String, String) -> R, R: Future<Output = ()> {
     env_logger::builder().is_test(true).init();
     let (oidc_addr, oidc_tx, oidc_handle) = init_oidc().await;
-    let (srv_port, srv_tx, srv_handle) = init_drawbridge(oidc_addr).await;
-    let srv_addr = format!("https://localhost:{srv_port}");
+    let (db_port, db_tx, db_handle) = init_drawbridge(oidc_addr).await;
+    let db_addr = format!("localhost:{db_port}");
 
-    commands(srv_addr).await;
+    commands(oidc_addr.to_string(), db_addr).await;
 
     // Gracefully stop servers
     assert_eq!(oidc_tx.send(()), Ok(()));
-    assert_eq!(srv_tx.send(()), Ok(()));
-    assert!(matches!(join!(oidc_handle, srv_handle), ((), ())));
+    assert_eq!(db_tx.send(()), Ok(()));
+    assert!(matches!(join!(oidc_handle, db_handle), ((), ())));
 }
 
 async fn init_oidc() -> (SocketAddr, Sender<()>, JoinHandle<()>) {
@@ -94,7 +97,10 @@ async fn init_oidc() -> (SocketAddr, Sender<()>, JoinHandle<()>) {
 
                         let oidc_url = format!("http://{oidc_addr}/");
                         match req.url().path() {
-                            "/.well-known/openid-configuration" => json_response(
+                            "/.well-known/openid-configuration" => {
+                                dbg!(req.clone());
+                                println!("Aasdfasdfsdf");
+                                json_response(
                                 &CoreProviderMetadata::new(
                                     // Parameters required by the OpenID Connect Discovery spec.
                                     IssuerUrl::new(oidc_url.to_string()).unwrap(),
@@ -109,7 +115,7 @@ async fn init_oidc() -> (SocketAddr, Sender<()>, JoinHandle<()>) {
                                 .set_userinfo_endpoint(Some(
                                     UserInfoUrl::new(format!("{oidc_url}userinfo")).unwrap(),
                                 )),
-                            ),
+                            )},
                             "/jwks" => json_response(&CoreJsonWebKeySet::new(vec![
                                 CoreJsonWebKey::new_rsa(b"ntest".to_vec(), b"etest".to_vec(), None),
                             ])),
@@ -154,9 +160,9 @@ async fn init_drawbridge(oidc_addr: SocketAddr) -> (u16, Sender<()>, JoinHandle<
 
     let srv_handle = spawn(async move {
         let tls = TlsConfig::read(
-            include_bytes!("data/server.crt").as_slice(),
-            include_bytes!("data/server.key").as_slice(),
-            include_bytes!("data/ca.crt").as_slice(),
+            include_bytes!("certs/server.crt").as_slice(),
+            include_bytes!("certs/server.key").as_slice(),
+            include_bytes!("certs/ca.crt").as_slice(),
         )
         .unwrap();
         let app = App::new(
@@ -165,7 +171,7 @@ async fn init_drawbridge(oidc_addr: SocketAddr) -> (u16, Sender<()>, JoinHandle<
             OidcConfig {
                 label: "test-label".into(),
                 issuer: format!("http://{oidc_addr}").parse().unwrap(),
-                client_id: "test-client_id".into(),
+                client_id: "test-client-id".into(),
                 client_secret: None,
             },
         )
@@ -183,37 +189,4 @@ async fn init_drawbridge(oidc_addr: SocketAddr) -> (u16, Sender<()>, JoinHandle<
     });
 
     (srv_port, srv_tx, srv_handle)
-}
-
-pub async fn write_files() -> TempDir {
-    let pkg = tempdir().expect("failed to create temporary package directory");
-
-    try_join!(
-        write(pkg.path().join("test-file"), "no extension"),
-        write(pkg.path().join("test-file.txt"), "text"),
-        write(pkg.path().join("test-file.json"), "not valid json"),
-        write(pkg.path().join("tEst-file..__.foo.42."), "invalidext"),
-        create_dir(pkg.path().join("test-dir-1")),
-    )
-    .unwrap();
-
-    try_join!(
-        write(pkg.path().join("test-dir-1").join("test-file.txt"), "text"),
-        write(pkg.path().join("test-dir-1").join("test-file"), "test"),
-        create_dir(pkg.path().join("test-dir-1").join("test-subdir-1")),
-        create_dir(pkg.path().join("test-dir-1").join("test-subdir-2")),
-    )
-    .unwrap();
-
-    write(
-        pkg.path()
-            .join("test-dir-1")
-            .join("test-subdir-2")
-            .join("test-file"),
-        "test",
-    )
-    .await
-    .unwrap();
-
-    pkg
 }

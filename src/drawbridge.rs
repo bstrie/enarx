@@ -77,20 +77,20 @@ fn parse_slug<T: FromStr>(s: &str) -> Result<(Client, T), <T as FromStr>::Err> {
         None => (DEFAULT_HOST, s),
     };
 
-    let client = create_client(host);
+    let client = create_client(format!("https://{host}"));
     let ctx = name.parse()?;
 
     Ok((client, ctx))
 }
 
-fn create_client(addr: &str) -> Client {
+fn create_client(addr: String) -> Client {
     let cl = Client::builder(addr.parse().unwrap());
 
-    // TODO: test only?
+    // TODO: integration test only
     let cl = cl.roots({
         let mut roots = RootCertStore::empty();
         rustls_pemfile::certs(&mut std::io::BufReader::new(
-            include_bytes!("../tests/client/data/ca.crt").as_slice(),
+            include_bytes!("../tests/client/certs/ca.crt").as_slice(),
         ))
         .unwrap()
         .into_iter()

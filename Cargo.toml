@@ -26,8 +26,7 @@ bitflags = { version = "1.2", default-features = false }
 clap = { version = "3.1", features = ["env", "derive", "std"], default-features = false }
 colorful = { version = "0.2", default-features = false }
 dirs = { version = "4.0", default-features = false }
-drawbridge-client = { path = "../drawbridge/crates/client" }
-#drawbridge-client = { git = "https://github.com/profianinc/drawbridge", rev = "d8e0befbd8da6b9f357c396273996e6141f7569f" }
+drawbridge-client = { git = "https://github.com/profianinc/drawbridge", rev = "d8e0befbd8da6b9f357c396273996e6141f7569f" }
 enarx-exec-wasmtime = { version = "0.5.1", path = "crates/exec-wasmtime", default-features = false }
 env_logger = { version = "0.9", default-features = false }
 keyring = { version = "1.1.2", default-features = false }
@@ -35,6 +34,7 @@ libc = { version = "0.2", default-features = false }
 log = { version = "0.4", default-features = false }
 oauth2 = { version = "4.2.0", default-features = false, features = ["ureq"] }
 once_cell = { version = "1.11.0", features = ["std"], default-features = false }
+openidconnect = { version = "2.3.1", features = ["ureq"] }
 rustls = { version = "0.20.6", default-features = false }
 rustls-pemfile = { version = "1.0.0", default-features = false }
 serde = { version = "1.0.136", features = ["derive"], default-features = false }
@@ -76,8 +76,7 @@ protobuf-codegen-pure = { version = "2.27", default-features = false }
 [dev-dependencies]
 async-h1 = { version = "2.3.3", default-features = false }
 async-std = { version = "1.11.0", default-features = false, features = ["attributes"] }
-drawbridge-app = { path = "../drawbridge/crates/app" }
-#drawbridge-app = { git = "https://github.com/profianinc/drawbridge", rev = "bb43cb593f04030b376143bfe55476f06da025fc" }
+drawbridge-app = { git = "https://github.com/profianinc/drawbridge", rev = "bb43cb593f04030b376143bfe55476f06da025fc" }
 futures = { version = "0.3.21", default-features = false }
 http-types = { version = "2.12.0", default-features = false }
 openidconnect = { version = "2.3.1", default-features = false }

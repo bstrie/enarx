@@ -965,14 +965,15 @@ dependencies = [
 [[package]]
 name = "drawbridge-app"
 version = "0.1.0"
+source = "git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc#bb43cb593f04030b376143bfe55476f06da025fc"
 dependencies = [
  "anyhow",
  "async-std",
  "axum",
  "camino",
  "cap-async-std",
- "drawbridge-jose",
- "drawbridge-type",
+ "drawbridge-jose 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc)",
+ "drawbridge-type 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc)",
  "futures",
  "futures-rustls",
  "hyper",
@@ -990,6 +991,16 @@ dependencies = [
 [[package]]
 name = "drawbridge-byte"
 version = "0.1.0"
+source = "git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc#bb43cb593f04030b376143bfe55476f06da025fc"
+dependencies = [
+ "base64",
+ "serde",
+]
+
+[[package]]
+name = "drawbridge-byte"
+version = "0.1.0"
+source = "git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f#d8e0befbd8da6b9f357c396273996e6141f7569f"
 dependencies = [
  "base64",
  "serde",
@@ -998,10 +1009,11 @@ dependencies = [
 [[package]]
 name = "drawbridge-client"
 version = "0.1.0"
+source = "git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f#d8e0befbd8da6b9f357c396273996e6141f7569f"
 dependencies = [
  "anyhow",
- "drawbridge-jose",
- "drawbridge-type",
+ "drawbridge-jose 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f)",
+ "drawbridge-type 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f)",
  "http",
  "mime",
  "rustls",
@@ -1014,9 +1026,24 @@ dependencies = [
 [[package]]
 name = "drawbridge-jose"
 version = "0.1.0"
+source = "git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc#bb43cb593f04030b376143bfe55476f06da025fc"
 dependencies = [
  "base64",
- "drawbridge-byte",
+ "drawbridge-byte 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc)",
+ "mediatype",
+ "serde",
+ "serde_json",
+ "url",
+ "zeroize",
+]
+
+[[package]]
+name = "drawbridge-jose"
+version = "0.1.0"
+source = "git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f#d8e0befbd8da6b9f357c396273996e6141f7569f"
+dependencies = [
+ "base64",
+ "drawbridge-byte 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f)",
  "mediatype",
  "serde",
  "serde_json",
@@ -1027,15 +1054,34 @@ dependencies = [
 [[package]]
 name = "drawbridge-type"
 version = "0.1.0"
+source = "git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc#bb43cb593f04030b376143bfe55476f06da025fc"
 dependencies = [
  "anyhow",
  "axum",
  "base64",
- "drawbridge-byte",
- "drawbridge-jose",
+ "drawbridge-byte 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc)",
+ "drawbridge-jose 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=bb43cb593f04030b376143bfe55476f06da025fc)",
  "futures",
  "headers",
  "http",
+ "mime",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2 0.10.2",
+ "walkdir",
+]
+
+[[package]]
+name = "drawbridge-type"
+version = "0.1.0"
+source = "git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f#d8e0befbd8da6b9f357c396273996e6141f7569f"
+dependencies = [
+ "anyhow",
+ "base64",
+ "drawbridge-byte 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f)",
+ "drawbridge-jose 0.1.0 (git+https://github.com/profianinc/drawbridge?rev=d8e0befbd8da6b9f357c396273996e6141f7569f)",
+ "futures",
  "mime",
  "semver",
  "serde",
@@ -1208,6 +1254,15 @@ dependencies = [
 [[package]]
 name = "enarx_wasm_tests"
 version = "0.1.0"
+
+[[package]]
+name = "encoding_rs"
+version = "0.8.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9852635589dc9f9ea1b6fe9f05b50ef208c85c834a562f0c6abb1c475736ec2b"
+dependencies = [
+ "cfg-if 1.0.0",
+]
 
 [[package]]
 name = "enumflags2"
@@ -1564,6 +1619,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "h2"
+version = "0.3.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37a82c6d637fc9515a4694bbf1cb2457b79d81ce52b3108bdeea58b07dd34a57"
+dependencies = [
+ "bytes",
+ "fnv",
+ "futures-core",
+ "futures-sink",
+ "futures-util",
+ "http",
+ "indexmap",
+ "slab",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1717,6 +1791,7 @@ dependencies = [
  "futures-channel",
  "futures-core",
  "futures-util",
+ "h2",
  "http",
  "http-body",
  "httparse",
@@ -1728,6 +1803,19 @@ dependencies = [
  "tower-service",
  "tracing",
  "want",
+]
+
+[[package]]
+name = "hyper-rustls"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d87c48c02e0dc5e3b849a2041db3029fd066650f8f717c07bf8ed78ccb895cac"
+dependencies = [
+ "http",
+ "hyper",
+ "rustls",
+ "tokio",
+ "tokio-rustls",
 ]
 
 [[package]]
@@ -2203,6 +2291,7 @@ dependencies = [
  "getrandom 0.2.7",
  "http",
  "rand 0.8.5",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_path_to_error",
@@ -2673,6 +2762,45 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3acd125665422973a33ac9d3dd2df85edad0f4ae9b00dafb1a05e43a9f5ef8e7"
 dependencies = [
  "winapi",
+]
+
+[[package]]
+name = "reqwest"
+version = "0.11.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b75aa69a3f06bbcc66ede33af2af253c6f7a86b1ca0033f60c580a27074fbf92"
+dependencies = [
+ "base64",
+ "bytes",
+ "encoding_rs",
+ "futures-core",
+ "futures-util",
+ "h2",
+ "http",
+ "http-body",
+ "hyper",
+ "hyper-rustls",
+ "ipnet",
+ "js-sys",
+ "lazy_static",
+ "log",
+ "mime",
+ "percent-encoding",
+ "pin-project-lite",
+ "rustls",
+ "rustls-pemfile",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "tokio",
+ "tokio-rustls",
+ "tower-service",
+ "url",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "webpki-roots",
+ "winreg",
 ]
 
 [[package]]
@@ -3288,12 +3416,26 @@ version = "1.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c51a52ed6686dd62c320f9b89299e9dfb46f730c7a48e635c19f21d116cb1439"
 dependencies = [
+ "bytes",
  "libc",
+ "memchr",
  "mio",
+ "num_cpus",
  "once_cell",
  "pin-project-lite",
  "socket2",
  "winapi",
+]
+
+[[package]]
+name = "tokio-rustls"
+version = "0.23.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c43ee83903113e03984cb9e5cebe6c04a5116269e900e3ddba8f068a62adda59"
+dependencies = [
+ "rustls",
+ "tokio",
+ "webpki",
 ]
 
 [[package]]
@@ -3308,6 +3450,7 @@ dependencies = [
  "futures-sink",
  "pin-project-lite",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -4031,6 +4174,15 @@ name = "windows_x86_64_msvc"
 version = "0.36.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c811ca4a8c853ef420abd8592ba53ddbbac90410fab6903b3e79972a631f7680"
+
+[[package]]
+name = "winreg"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "80d0f4e272c85def139476380b12f9ac60926689dd2e01d4923222f40580869d"
+dependencies = [
+ "winapi",
+]
 
 [[package]]
 name = "winx"

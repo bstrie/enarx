@@ -14,25 +14,33 @@ use oauth2::{AuthType, AuthUrl, ClientId, DeviceAuthorizationUrl, Scope, TokenRe
 #[derive(Args, Debug)]
 pub struct Options {
     #[clap(long, default_value = "https://auth.profian.com/")]
-    domain: Url,
+    oidc_domain: Url,
     #[clap(long, default_value = "4NuaJxkQv8EZBeJKE56R57gKJbxrTLG2")]
-    client_id: String,
+    oidc_client_id: String,
 }
 
 impl Options {
     pub fn execute(self) -> anyhow::Result<()> {
-        let Self { domain, client_id } = self;
+        let Self {
+            oidc_domain,
+            oidc_client_id,
+        } = self;
 
-        let dev_auth_url = DeviceAuthorizationUrl::new(format!("{domain}oauth/device/code"))
+        let dev_auth_url = DeviceAuthorizationUrl::new(format!("{oidc_domain}oauth/device/code"))
             .context("Failed to construct device authorization URL")?;
-        let auth_url = AuthUrl::new(format!("{domain}authorize"))
+        let auth_url = AuthUrl::new(format!("{oidc_domain}authorize"))
             .context("Failed to construct authorization URL")?;
-        let token_url = TokenUrl::new(format!("{domain}oauth/token"))
+        let token_url = TokenUrl::new(format!("{oidc_domain}oauth/token"))
             .context("Failed to construct token URL")?;
 
-        let client = BasicClient::new(ClientId::new(client_id), None, auth_url, Some(token_url))
-            .set_auth_type(AuthType::RequestBody)
-            .set_device_authorization_url(dev_auth_url);
+        let client = BasicClient::new(
+            ClientId::new(oidc_client_id),
+            None,
+            auth_url,
+            Some(token_url),
+        )
+        .set_auth_type(AuthType::RequestBody)
+        .set_device_authorization_url(dev_auth_url);
 
         let details: StandardDeviceAuthorizationResponse = client
             .exchange_device_code()

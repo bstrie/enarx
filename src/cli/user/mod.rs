@@ -7,11 +7,12 @@ mod register;
 
 use clap::Subcommand;
 
-/// Commands for working with user accounts on an Enarx package host.
+/// Commands for working with users on an Enarx package host.
 #[derive(Subcommand, Debug)]
 pub enum Subcommands {
     Info(info::Options),
     Login(login::Options),
+    #[clap(hide = true)]
     Logout(logout::Options),
     Register(register::Options),
 }
