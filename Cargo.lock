@@ -965,18 +965,33 @@ dependencies = [
 [[package]]
 name = "drawbridge-byte"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66dcc6c31b5c082a621ec91b53dc430728955c4e1832cccd2282a4adee02091e"
+source = "git+https://github.com/bstrie/drawbridge?rev=f1e4ca8915e18f9789d33da145f703332826a060#f1e4ca8915e18f9789d33da145f703332826a060"
 dependencies = [
  "base64",
  "serde",
 ]
 
 [[package]]
+name = "drawbridge-client"
+version = "0.1.0"
+source = "git+https://github.com/bstrie/drawbridge?rev=f1e4ca8915e18f9789d33da145f703332826a060#f1e4ca8915e18f9789d33da145f703332826a060"
+dependencies = [
+ "anyhow",
+ "drawbridge-jose",
+ "drawbridge-type",
+ "http",
+ "mime",
+ "rustls",
+ "serde_json",
+ "ureq",
+ "url",
+ "webpki-roots",
+]
+
+[[package]]
 name = "drawbridge-jose"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3dd021d2c3a8116df536e6e153837cdfcf8611aef1c59441b77c2b4bcfc4c40d"
+source = "git+https://github.com/bstrie/drawbridge?rev=f1e4ca8915e18f9789d33da145f703332826a060#f1e4ca8915e18f9789d33da145f703332826a060"
 dependencies = [
  "base64",
  "drawbridge-byte",
@@ -990,8 +1005,7 @@ dependencies = [
 [[package]]
 name = "drawbridge-server"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94cfd3dd025338ace40ec5a7dfe7110858e920c6b59fd23cc31462e135f31be3"
+source = "git+https://github.com/bstrie/drawbridge?rev=f1e4ca8915e18f9789d33da145f703332826a060#f1e4ca8915e18f9789d33da145f703332826a060"
 dependencies = [
  "anyhow",
  "async-std",
@@ -1017,8 +1031,7 @@ dependencies = [
 [[package]]
 name = "drawbridge-type"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f3a15c8eb93d34d9b76dd36ceac627a4ab013c839c2ffb333f173faa0a99d50"
+source = "git+https://github.com/bstrie/drawbridge?rev=f1e4ca8915e18f9789d33da145f703332826a060#f1e4ca8915e18f9789d33da145f703332826a060"
 dependencies = [
  "anyhow",
  "axum",
@@ -1056,6 +1069,7 @@ dependencies = [
  "colorful",
  "const-default",
  "dirs",
+ "drawbridge-client",
  "drawbridge-server",
  "enarx-config",
  "enarx-exec-wasmtime",
@@ -1097,7 +1111,6 @@ dependencies = [
  "sgx",
  "static_assertions",
  "tempfile",
- "tiedcrossing-client",
  "toml",
  "ureq",
  "url",
@@ -3269,68 +3282,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "tiedcrossing-byte"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a808ebe1f24eea94633338338253a628bdb61d438ceedc02bf2ef18c992d509b"
-dependencies = [
- "base64",
- "serde",
-]
-
-[[package]]
-name = "tiedcrossing-client"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec3bad898c915ab983b5df811a06f18cc546bd495497d83137ac20d552fc569b"
-dependencies = [
- "anyhow",
- "http",
- "mime",
- "rustls",
- "serde_json",
- "tiedcrossing-jose",
- "tiedcrossing-type",
- "ureq",
- "url",
- "webpki-roots",
-]
-
-[[package]]
-name = "tiedcrossing-jose"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d890b63492e6adabb97968021f0219ed0c6756605ba86e0a893069a75b3d775"
-dependencies = [
- "base64",
- "mediatype",
- "serde",
- "serde_json",
- "tiedcrossing-byte",
- "url",
- "zeroize",
-]
-
-[[package]]
-name = "tiedcrossing-type"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "594af36a6402fd31d2370c370f130602bc3193fb1ebbfdb705f910128486d11c"
-dependencies = [
- "anyhow",
- "base64",
- "futures",
- "mime",
- "semver",
- "serde",
- "serde_json",
- "sha2 0.10.2",
- "tiedcrossing-byte",
- "tiedcrossing-jose",
- "walkdir",
 ]
 
 [[package]]
