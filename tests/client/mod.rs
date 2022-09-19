@@ -47,6 +47,10 @@ async fn full() {
         );
         assert_eq!(cmd.success, true);
 
+        // test for success when looking up a user that exists
+        let cmd = cmd!("enarx user info {db_addr}/testuser");
+        assert_eq!(cmd.success, true);
+
         // test for failure when creating a user whose subject matches an existing user
         let cmd = cmd!(
             "enarx user register
